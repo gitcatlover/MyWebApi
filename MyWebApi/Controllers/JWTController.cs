@@ -19,8 +19,11 @@ namespace MyWebApi.Controllers
     {
         private readonly IHttpContextAccessor _accessor;
         private readonly IConfiguration _configuration;
+        //依赖注入是实现控制反转的一种方式
         public JWTController(IHttpContextAccessor accessor, IConfiguration configuration)
         {
+            //依赖注入的HttpContextAccessor，先运行HttpContextAccessor的构造函数，然后再运行控制器的构造函数,
+            //HttpContextAccessor的控制权反转到了控制器的调用者
             this._accessor = accessor;
             this._configuration = configuration;
         }
