@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -30,10 +31,25 @@ namespace MyWebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+            //需要从加载配置文件appsettings.json
+            services.AddOptions();
+            //需要存储速率限制计算器和ip规则
+            services.AddMemoryCache();
+            //从appsettings.json中加载常规配置，IpRateLimiting与配置文件中节点对应
+            services.Configure<ClientRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+            //从appsettings.json中加载Ip规则
+            services.Configure<ClientRateLimitPolicies>(Configuration.GetSection("ClientRateLimitPolicies"));
+            //注入计数器和规则存储
+            services.AddSingleton<IClientPolicyStore, MemoryCacheClientPolicyStore>();
+            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
 
             services.AddControllers();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            //配置（解析器、计数器密钥生成器）
+            services.AddSingleton<IRateLimitConfiguration,RateLimitConfiguration>();
+
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             var jwtConfig = Configuration.GetSection("Jwt");
             //生成密钥
@@ -101,6 +117,8 @@ namespace MyWebApi
 
             app.UseAuthentication();//认证
             app.UseAuthorization();//授权
+            //启用客户端限制
+            app.UseClientRateLimiting();
 
             app.UseEndpoints(endpoints =>
             {
