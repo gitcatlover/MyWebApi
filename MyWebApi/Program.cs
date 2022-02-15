@@ -18,9 +18,14 @@ namespace MyWebApi
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseStartup<Startup>();
+            })
+            .ConfigureAppConfiguration(webBuilder =>
+            {
+                //读取自定义配置文件
+                webBuilder.AddJsonFile("RateLimit.json", true, true);
+            });
     }
 }
